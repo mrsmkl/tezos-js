@@ -7,6 +7,69 @@
 (*                                                                        *)
 (**************************************************************************)
 
+open Error_monad
+
+type bigbytes =
+  (char, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
+
+(*
+module type S = sig
+  type t
+  type ctype
+
+  val ctype      : ctype typ
+
+  val create     : int -> t
+  val zero       : t -> int -> int -> unit
+  val blit       : t -> int -> t -> int -> int -> unit
+  val sub        : t -> int -> int -> t
+  val length     : t -> int
+  val len_size_t : t -> PosixTypes.size_t
+  val len_ullong : t -> Unsigned.ullong
+  val to_ptr     : t -> ctype
+  val to_bytes   : t -> Bytes.t
+  val of_bytes   : Bytes.t -> t
+end
+*)
+
+module Bigbytes = struct
+  type t = bigbytes
+  (*
+  type ctype = char ptr
+
+  let ctype = ptr char
+  *)
+
+  open Bigarray
+
+  let create     len = (Array1.create char c_layout len)
+  let length     str = Array1.dim str
+  
+  (*
+  let len_size_t str = Unsigned.Size_t.of_int (Array1.dim str)
+  let len_ullong str = Unsigned.ULLong.of_int (Array1.dim str)
+  let to_ptr     str = bigarray_start array1 str
+  *)
+  
+  let zero       str pos len = (Array1.fill (Array1.sub str pos len) '\x00')
+
+  let to_bytes str =
+    let str' = Bytes.create (Array1.dim str) in
+    Bytes.iteri (fun i _ -> Bytes.set str' i (Array1.unsafe_get str i)) str';
+    str'
+
+  let of_bytes str =
+    let str' = create (Bytes.length str) in
+    Bytes.iteri (Array1.unsafe_set str') str;
+    str'
+
+  let sub = Array1.sub
+
+  let blit src srcoff dst dstoff len =
+    Array1.blit (Array1.sub src srcoff len)
+                (Array1.sub dst dstoff len)
+end
+
 module Ed25519 = struct
 
   module Public_key_hash = Hash.Make_Blake2B(Base58)(struct
@@ -19,12 +82,25 @@ module Ed25519 = struct
   let () =
     Base58.check_encoded_prefix Public_key_hash.b58check_encoding "tz1" 36
 
+    let sodium_Sign_public_key_size = 32
+    let sodium_Sign_secret_key_size = 32
+    let sodium_Sign_signature_size = 32
+    let sodium_Sign_Bytes_of_public_key x = x
+    let sodium_Sign_Bytes_to_public_key x = x
+    let sodium_Sign_Bigbytes_of_public_key x = Bigbytes.of_bytes x
+    let sodium_Sign_Bigbytes_to_public_key x = Bigbytes.to_bytes x
+    let sodium_Sign_Bytes_of_secret_key x = x
+    let sodium_Sign_Bytes_to_secret_key x = x
+    let sodium_Sign_Bigbytes_of_secret_key x = Bigbytes.of_bytes x
+    let sodium_Sign_Bigbytes_to_secret_key x = Bigbytes.to_bytes x
+    
   module Public_key = struct
 
 (*    type t = Sodium.Sign.public_key
     let compare = Sodium.Sign.compare_public_keys *)
     
-    type t = string
+    type t = Bytes.t
+
     let compare = compare
     
     let (=) xs ys = compare xs ys = 0
@@ -40,14 +116,14 @@ module Ed25519 = struct
 
     type Base58.data +=
       | Public_key of t
-
+      
     let b58check_encoding =
       Base58.register_encoding
         ~prefix: Base58.Prefix.ed25519_public_key
-        ~length:Sodium.Sign.public_key_size
-        ~to_raw:(fun x -> Bytes.to_string (Sodium.Sign.Bytes.of_public_key x))
+        ~length:sodium_Sign_public_key_size
+        ~to_raw:(fun x -> Bytes.to_string (sodium_Sign_Bytes_of_public_key x))
         ~of_raw:(fun x ->
-            try Some (Sodium.Sign.Bytes.to_public_key (Bytes.of_string x))
+            try Some (sodium_Sign_Bytes_to_public_key (Bytes.of_string x))
             with _ -> None)
         ~wrap:(fun x -> Public_key x)
 
@@ -62,7 +138,7 @@ module Ed25519 = struct
       | None -> generic_error "Unexpected hash (ed25519 public key)"
     let to_b58check s = Base58.simple_encode b58check_encoding s
 
-    let of_bytes s = Sodium.Sign.Bytes.to_public_key s
+    let of_bytes s = sodium_Sign_Bytes_to_public_key s
 
     let param ?(name="ed25519-public") ?(desc="Ed25519 public key (b58check-encoded)") t =
       Cli_entries.param ~name ~desc (fun _ str -> Lwt.return (of_b58check str)) t
@@ -86,19 +162,20 @@ module Ed25519 = struct
              string)
         ~binary:
           (conv
-             Sodium.Sign.Bigbytes.of_public_key
-             Sodium.Sign.Bigbytes.to_public_key
-             (Fixed.bytes Sodium.Sign.public_key_size))
+             sodium_Sign_Bigbytes_of_public_key
+             sodium_Sign_Bigbytes_to_public_key
+             (Fixed.bytes sodium_Sign_public_key_size))
 
     let hash v =
       Public_key_hash.hash_bytes
-        [ Sodium.Sign.Bigbytes.of_public_key v ]
+        [ sodium_Sign_Bigbytes_of_public_key v ]
 
   end
 
   module Secret_key = struct
 
-    type t = Sodium.Sign.secret_key
+    type t = Bytes.t
+(*     type t = Sodium.Sign.secret_key *)
 
     type Base58.data +=
       | Secret_key of t
@@ -106,10 +183,10 @@ module Ed25519 = struct
     let b58check_encoding =
       Base58.register_encoding
         ~prefix: Base58.Prefix.ed25519_secret_key
-        ~length:Sodium.Sign.secret_key_size
-        ~to_raw:(fun x -> Bytes.to_string (Sodium.Sign.Bytes.of_secret_key x))
+        ~length:sodium_Sign_secret_key_size
+        ~to_raw:(fun x -> Bytes.to_string (sodium_Sign_Bytes_of_secret_key x))
         ~of_raw:(fun x ->
-            try Some (Sodium.Sign.Bytes.to_secret_key (Bytes.of_string x))
+            try Some (sodium_Sign_Bytes_to_secret_key (Bytes.of_string x))
             with _ -> None)
         ~wrap:(fun x -> Secret_key x)
 
@@ -124,7 +201,7 @@ module Ed25519 = struct
       | None -> generic_error "Unexpected hash (ed25519 public key)"
     let to_b58check s = Base58.simple_encode b58check_encoding s
 
-    let of_bytes s = Sodium.Sign.Bytes.to_secret_key s
+    let of_bytes s = sodium_Sign_Bytes_to_secret_key s
 
     let param ?(name="ed25519-secret") ?(desc="Ed25519 secret key (b58check-encoded)") t =
       Cli_entries.param ~name ~desc (fun _ str -> Lwt.return (of_b58check str)) t
@@ -148,14 +225,18 @@ module Ed25519 = struct
              string)
         ~binary:
           (conv
-             Sodium.Sign.Bigbytes.of_secret_key
-             Sodium.Sign.Bigbytes.to_secret_key
-             (Fixed.bytes Sodium.Sign.secret_key_size))
+             sodium_Sign_Bigbytes_of_secret_key
+             sodium_Sign_Bigbytes_to_secret_key
+             (Fixed.bytes sodium_Sign_secret_key_size))
 
   end
 
+  let sign key msg = msg
+
+(*
   let sign key msg =
     Sodium.Sign.Bigbytes.(of_signature @@ sign_detached key msg)
+*)
 
   module Signature = struct
 
@@ -167,7 +248,7 @@ module Ed25519 = struct
     let b58check_encoding =
       Base58.register_encoding
         ~prefix: Base58.Prefix.ed25519_signature
-        ~length:Sodium.Sign.signature_size
+        ~length:sodium_Sign_signature_size
         ~to_raw:MBytes.to_string
         ~of_raw:(fun s -> Some (MBytes.of_string s))
         ~wrap:(fun x -> Signature x)
@@ -205,21 +286,28 @@ module Ed25519 = struct
                 | None -> Data_encoding.Json.cannot_destruct
                             "Ed25519 signature: unexpected prefix.")
              string)
-        ~binary: (Fixed.bytes Sodium.Sign.signature_size)
+        ~binary: (Fixed.bytes sodium_Sign_signature_size)
 
+(*
     let check public_key signature msg =
       try
         Sodium.Sign.Bigbytes.(verify public_key (to_signature signature) msg) ;
         true
       with _ -> false
+*)
+
+    let check public_key signature msg = true
 
     let append key msg =
       MBytes.concat msg (sign key msg)
 
   end
 
+    let sodium_Sign_random_keypair () =
+       (Bytes.make 32 'a', Bytes.make 32 'b')
+
   let generate_key () =
-    let secret, pub = Sodium.Sign.random_keypair () in
+    let secret, pub = sodium_Sign_random_keypair () in
     (Public_key.hash pub, pub, secret)
 
 end
@@ -249,7 +337,9 @@ module Make(Param : sig val name: string end)() = struct
   module Buffer = Buffer
   module Format = Format
   module Hex_encode = Hex_encode
+  
   module Z = Z
+  
   module Lwt_sequence = Lwt_sequence
   module Lwt = Lwt
   module Lwt_list = Lwt_list
