@@ -283,8 +283,8 @@ let fork_test_network v ~protocol ~expiration =
 (*-- Initialisation ----------------------------------------------------------*)
 
 let init ?patch_context ~root =
-  GitStore.Repo.create
-    (Irmin_unix.Irmin_git.config ~root ~bare:true ()) >>= fun repo ->
+  GitStore.Repo.create (Irmin_mem.config ()) (*
+    (Irmin_unix.Irmin_git.config ~root ~bare:true ()) *) >>= fun repo ->
   Lwt.return {
     commits = 0 ;
     repack_scheduler = Lwt_utils.Idle_waiter.create () ;
