@@ -7,6 +7,8 @@
 (*                                                                        *)
 (**************************************************************************)
 
+open Error_monad
+
 type error +=
   | Too_late_reward_recording
   | Too_late_reward_discarding

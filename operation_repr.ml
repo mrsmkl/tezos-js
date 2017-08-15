@@ -7,6 +7,11 @@
 (*                                                                        *)
 (**************************************************************************)
 
+open Error_monad
+open Tezos_data
+open Hash
+open Environment
+
 (* Tezos Protocol Implementation - Low level Repr. of Operations *)
 
 type raw = Operation.t = {

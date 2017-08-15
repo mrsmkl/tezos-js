@@ -16,6 +16,7 @@ let (>|=) = Lwt.(>|=)
 open Error_monad
 open Utils
 
+(*
 let () =
   let expected_primitive = "blake2b"
   and primitive = Sodium.Generichash.primitive in
@@ -26,6 +27,7 @@ let () =
       primitive expected_primitive ;
     exit 1
   end
+*)
 
 (*-- Signatures -------------------------------------------------------------*)
 
@@ -151,7 +153,13 @@ end
 
 module Make_minimal_Blake2B (K : Name) = struct
 
-  type t = Sodium.Generichash.hash
+  (* type t = Sodium.Generichash.hash *)
+  type t = Bytes.t
+  
+  let sodium_Generichash_Bytes_to_hash x = x 
+  let sodium_Generichash_Bytes_of_hash x = x 
+  let sodium_Generichash_Bigbytes_to_hash x = Bigbytes.to_bytes x
+  let sodium_Generichash_Bigbytes_of_hash x = Bigbytes.of_bytes x 
 
   include K
 
@@ -164,7 +172,7 @@ module Make_minimal_Blake2B (K : Name) = struct
     if String.length s <> size then
       None
     else
-      Some (Sodium.Generichash.Bytes.to_hash (Bytes.of_string s))
+      Some (sodium_Generichash_Bytes_to_hash (Bytes.of_string s))
   let of_string_exn s =
     match of_string s with
     | None ->
@@ -173,20 +181,21 @@ module Make_minimal_Blake2B (K : Name) = struct
             K.name (String.length s) in
         raise (Invalid_argument msg)
     | Some h -> h
-  let to_string s = Bytes.to_string (Sodium.Generichash.Bytes.of_hash s)
+  let to_string s = Bytes.to_string (sodium_Generichash_Bytes_of_hash s)
 
   let of_hex s = of_string (Hex_encode.hex_decode s)
   let of_hex_exn s = of_string_exn (Hex_encode.hex_decode s)
   let to_hex s = Hex_encode.hex_encode (to_string s)
 
-  let compare = Sodium.Generichash.compare
+  let compare = compare
+  (* let compare = Sodium.Generichash.compare *)
   let equal x y = compare x y = 0
 
   let of_bytes b =
     if MBytes.length b <> size then
       None
     else
-      Some (Sodium.Generichash.Bigbytes.to_hash b)
+      Some (sodium_Generichash_Bigbytes_to_hash b)
   let of_bytes_exn b =
     match of_bytes b with
     | None ->
@@ -195,24 +204,24 @@ module Make_minimal_Blake2B (K : Name) = struct
             K.name (MBytes.length b) in
         raise (Invalid_argument msg)
     | Some h -> h
-  let to_bytes = Sodium.Generichash.Bigbytes.of_hash
+  let to_bytes = sodium_Generichash_Bigbytes_of_hash
 
   let read src off = of_bytes_exn @@ MBytes.sub src off size
   let write dst off h = MBytes.blit (to_bytes h) 0 dst off size
 
-  let hash_bytes l =
+  let hash_bytes l = Bytes.create 32 (*
     let open Sodium.Generichash in
     let state = init ~size () in
     List.iter (Bigbytes.update state) l ;
-    final state
+    final state *)
 
-  let hash_string l =
+  let hash_string l = Bytes.create 32 (*
     let open Sodium.Generichash in
     let state = init ~size () in
     List.iter
       (fun s -> Bytes.update state (BytesLabels.unsafe_of_string s))
       l ;
-    final state
+    final state *)
 
   let fold_read f buf off len init =
     let last = off + len * size in
@@ -257,7 +266,7 @@ module Make_minimal_Blake2B (K : Name) = struct
       let hash s =
         Int64.to_int
           (EndianString.BigEndian.get_int64
-             (Bytes.unsafe_to_string (Sodium.Generichash.Bytes.of_hash s))
+             (Bytes.unsafe_to_string (sodium_Generichash_Bytes_of_hash s))
              0)
       let equal = equal
     end)

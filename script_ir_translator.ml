@@ -7,6 +7,8 @@
 (*                                                                        *)
 (**************************************************************************)
 
+open Error_monad
+open Environment
 open Tezos_context
 open Script
 open Script_typed_ir

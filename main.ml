@@ -9,6 +9,9 @@
 
 (* Tezos Protocol Implementation - Protocol Signature Instance *)
 
+open Hash
+open Error_monad
+
 type operation = Tezos_context.operation
 
 let parse_operation = Tezos_context.Operation.parse
@@ -43,8 +46,10 @@ type validation_state =
     ctxt : Tezos_context.t ;
     op_count : int }
 
+(*
 let current_context { ctxt } =
   return (Tezos_context.finalize ctxt).context
+*)
 
 let precheck_block
     ~ancestor_context:_
@@ -117,7 +122,7 @@ let apply_operation ({ mode ; ctxt ; op_count } as data) operation =
 
 let finalize_block { mode ; ctxt ; op_count } = match mode with
   | Partial_construction _ ->
-      let ctxt = Tezos_context.finalize ctxt in
+(*      let ctxt = Tezos_context.finalize ctxt in *)
       return ctxt
   | Application
       { miner ;  block_header = { proto = block_proto_header } }
@@ -132,7 +137,7 @@ let finalize_block { mode ; ctxt ; op_count } = match mode with
         Format.asprintf
           "lvl %ld, fit %Ld, prio %d, %d ops"
           level fitness priority op_count in
-      let ctxt = Tezos_context.finalize ~commit_message ctxt in
+(*      let ctxt = Tezos_context.finalize ~commit_message ctxt in *)
       return ctxt
 
 let compare_operations op1 op2 =

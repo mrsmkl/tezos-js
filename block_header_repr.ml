@@ -7,7 +7,10 @@
 (*                                                                        *)
 (**************************************************************************)
 
+open Tezos_data
 open Tezos_hash
+open Environment
+open Error_monad
 
 (** Block header *)
 

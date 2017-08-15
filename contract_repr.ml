@@ -7,6 +7,9 @@
 (*                                                                        *)
 (**************************************************************************)
 
+open Environment
+open Error_monad
+open Hash
 open Tezos_hash
 
 type t =

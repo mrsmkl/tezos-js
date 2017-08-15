@@ -9,6 +9,9 @@
 
 (** Tezos Protocol Implementation - Main Entry Points *)
 
+open Error_monad
+open Hash
+open Environment
 open Tezos_context
 
 type error += Wrong_voting_period of Voting_period.t * Voting_period.t (* `Temporary *)

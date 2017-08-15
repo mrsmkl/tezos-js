@@ -7,6 +7,8 @@
 (*                                                                        *)
 (**************************************************************************)
 
+open Hash
+
 (* a protocol change proposal *)
 type proposal = Protocol_hash.t
 

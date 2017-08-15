@@ -7,6 +7,8 @@
 (*                                                                        *)
 (**************************************************************************)
 
+open Error_monad
+
 (* This is the genesis protocol: initialise the state *)
 let initialize store =
   Roll_storage.init store >>=? fun store ->

@@ -7,6 +7,8 @@
 (*                                                                        *)
 (**************************************************************************)
 
+open Hash
+open Error_monad
 open Tezos_context
 
 let select_winning_proposal proposals =

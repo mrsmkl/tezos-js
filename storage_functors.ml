@@ -9,7 +9,10 @@
 
 (* Tezos Protocol Implementation - Typed storage accessor builders *)
 
+open Error_monad
 open Misc
+open Hash
+open Environment.Env
 
 type context = {
   context: Context.t ;

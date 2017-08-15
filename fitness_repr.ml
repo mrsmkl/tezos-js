@@ -7,6 +7,8 @@
 (*                                                                        *)
 (**************************************************************************)
 
+open Error_monad
+
 type error += Invalid_fitness
 
 let int64_to_bytes i =

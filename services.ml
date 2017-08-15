@@ -7,8 +7,11 @@
 (*                                                                        *)
 (**************************************************************************)
 
+open Hash
 open Data_encoding
 open Tezos_context
+open Environment.Env
+open Error_monad
 
 let error_encoding =
   let open Data_encoding in

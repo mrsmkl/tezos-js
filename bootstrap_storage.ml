@@ -7,6 +7,9 @@
 (*                                                                        *)
 (**************************************************************************)
 
+open Error_monad
+open Environment.Env
+
 type account = {
   public_key_hash : Ed25519.Public_key_hash.t ;
   public_key : Ed25519.Public_key.t ;

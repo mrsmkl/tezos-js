@@ -7,6 +7,8 @@
 (*                                                                        *)
 (**************************************************************************)
 
+open Error_monad
+
 type error +=
   | Precomputed_seed
   | Invalid_cycle

@@ -7,6 +7,8 @@
 (*                                                                        *)
 (**************************************************************************)
 
+open Error_monad
+
 type t = int32
 type raw_level = t
 include (Compare.Int32 : Compare.S with type t := t)

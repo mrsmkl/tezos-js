@@ -7,6 +7,8 @@
 (*                                                                        *)
 (**************************************************************************)
 
+open Environment.Env
+
 type t = Storage.t
 type context = t
 
@@ -113,12 +115,17 @@ end
 
 let init = Init_storage.may_initialize
 
+(*
 let finalize ?commit_message:message c =
   let fitness = Fitness.from_int64 (Fitness.current c) in
   let context = Storage.recover c in
   { Updater.context ; fitness ; message ; max_operations_ttl = 60 }
+*)
 
 let configure_sandbox = Init_storage.configure_sandbox
 
 let activate = Storage.activate
 let fork_test_network = Storage.fork_test_network
+
+
+

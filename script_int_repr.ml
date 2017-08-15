@@ -7,6 +7,8 @@
 (*                                                                        *)
 (**************************************************************************)
 
+open Environment.Env
+
 type n = Natural_tag
 type z = Integer_tag
 type 't num = Z.t

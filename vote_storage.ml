@@ -7,6 +7,9 @@
 (*                                                                        *)
 (**************************************************************************)
 
+open Hash
+open Error_monad
+
 let record_proposal ctxt delegate proposal =
   Storage.Vote.Proposals.add ctxt (delegate, proposal)
 

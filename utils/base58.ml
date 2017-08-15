@@ -106,8 +106,10 @@ let raw_decode ?(alphabet=Alphabet.default) s =
 
 let checksum s =
   let hash =
+  (*
     Nocrypto.Hash.digest `SHA256 @@
     Nocrypto.Hash.digest `SHA256 @@
+    *)
     Cstruct.of_string s in
   let res = Bytes.make 4 '\000' in
   Cstruct.blit_to_bytes hash 0 res 0 4 ;

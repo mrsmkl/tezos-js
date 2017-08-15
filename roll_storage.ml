@@ -7,6 +7,8 @@
 (*                                                                        *)
 (**************************************************************************)
 
+open Error_monad
+
 type error +=
   | Consume_roll_change
   | No_roll_in_contract

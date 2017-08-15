@@ -7,6 +7,9 @@
 (*                                                                        *)
 (**************************************************************************)
 
+open Environment
+open Error_monad
+
 open Ed25519
 
 type error += Inconsistent_hash of Public_key.t * Public_key_hash.t * Public_key_hash.t

@@ -7,7 +7,9 @@
 (*                                                                        *)
 (**************************************************************************)
 
-
+open Error_monad
+open Environment.Env
+open Hash
 open Tezos_context
 open Misc
 

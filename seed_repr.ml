@@ -9,6 +9,7 @@
 
 (* Tezos Protocol Implementation - Random number generation *)
 
+open Error_monad
 open Tezos_hash
 
 type seed = B of State_hash.t

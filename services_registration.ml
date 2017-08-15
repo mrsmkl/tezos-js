@@ -7,7 +7,11 @@
 (*                                                                        *)
 (**************************************************************************)
 
+open Error_monad
+open Hash
+open Tezos_data
 open Tezos_context
+open Environment.Env
 
 type rpc_context = {
   block_hash: Block_hash.t ;

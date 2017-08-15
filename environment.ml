@@ -9,66 +9,7 @@
 
 open Error_monad
 
-type bigbytes =
-  (char, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
 
-(*
-module type S = sig
-  type t
-  type ctype
-
-  val ctype      : ctype typ
-
-  val create     : int -> t
-  val zero       : t -> int -> int -> unit
-  val blit       : t -> int -> t -> int -> int -> unit
-  val sub        : t -> int -> int -> t
-  val length     : t -> int
-  val len_size_t : t -> PosixTypes.size_t
-  val len_ullong : t -> Unsigned.ullong
-  val to_ptr     : t -> ctype
-  val to_bytes   : t -> Bytes.t
-  val of_bytes   : Bytes.t -> t
-end
-*)
-
-module Bigbytes = struct
-  type t = bigbytes
-  (*
-  type ctype = char ptr
-
-  let ctype = ptr char
-  *)
-
-  open Bigarray
-
-  let create     len = (Array1.create char c_layout len)
-  let length     str = Array1.dim str
-  
-  (*
-  let len_size_t str = Unsigned.Size_t.of_int (Array1.dim str)
-  let len_ullong str = Unsigned.ULLong.of_int (Array1.dim str)
-  let to_ptr     str = bigarray_start array1 str
-  *)
-  
-  let zero       str pos len = (Array1.fill (Array1.sub str pos len) '\x00')
-
-  let to_bytes str =
-    let str' = Bytes.create (Array1.dim str) in
-    Bytes.iteri (fun i _ -> Bytes.set str' i (Array1.unsafe_get str i)) str';
-    str'
-
-  let of_bytes str =
-    let str' = create (Bytes.length str) in
-    Bytes.iteri (Array1.unsafe_set str') str;
-    str'
-
-  let sub = Array1.sub
-
-  let blit src srcoff dst dstoff len =
-    Array1.blit (Array1.sub src srcoff len)
-                (Array1.sub dst dstoff len)
-end
 
 module Ed25519 = struct
 
@@ -350,14 +291,14 @@ module Make(Param : sig val name: string end)() = struct
   module Ed25519 = Ed25519
   module Hash = Hash
   module Tezos_data = Tezos_data
-  module Persist = Persist
+  
   module RPC = RPC
-  module Fitness = Fitness
-  module Updater = Updater
-  module Error_monad = struct
+  module Error_monad = Error_monad 
+  (*struct
     type error_category = [ `Branch | `Temporary | `Permanent ]
     include Error_monad.Make()
-  end
+  end*)
+  
   module Logging = Logging.Make(Param)
   module Base58 = struct
     include Base58
@@ -366,19 +307,176 @@ module Make(Param : sig val name: string end)() = struct
     include Make(struct type context = Context.t end)
     let decode s = decode s
   end
+  
+  
+  module Fitness = Tezos_data.Fitness
+  module Persist = Persist
   module Context = struct
     include Context
     let register_resolver = Base58.register_resolver
     let complete ctxt s = Base58.complete ctxt s
   end
 
+  module Updater = struct
+
+(* open Logging.Updater *)
+open Tezos_data
+open Hash
+
+let (//) = Filename.concat
+
+type validation_result (* = Protocol_sigs.validation_result *) = {
+  context: Context.t ;
+  fitness: Fitness.t ;
+  message: string option ;
+  max_operations_ttl: int ;
+}
+
+type rpc_context (* = Protocol_sigs.rpc_context *) = {
+  block_hash: Block_hash.t ;
+  block_header: Block_header.t ;
+  operation_hashes: unit -> Operation_hash.t list list Lwt.t ;
+  operations: unit -> Operation.t list list Lwt.t ;
+  context: Context.t ;
+}
+
+module type PROTOCOL = sig end (* Protocol_sigs.PROTOCOL *)
+(*
+module type PACKED_PROTOCOL = sig end (* Protocol_sigs.PACKED_PROTOCOL *)
+module type REGISTRED_PROTOCOL = sig
+  val hash: Protocol_hash.t
+  include PROTOCOL with type error := error
+                             and type 'a tzresult := 'a tzresult
+  val complete_b58prefix : Context.t -> string -> string list Lwt.t
+end
+*)
+
+
+(** Version table *)
+
+module VersionTable = Protocol_hash.Table
+
+(*
+let versions : ((module REGISTRED_PROTOCOL)) VersionTable.t =
+  VersionTable.create 20
+
+let register hash proto =
+  VersionTable.add versions hash proto
+*)
+
+let activate = Context.set_protocol
+let fork_test_network = Context.fork_test_network
+
+(*
+let get_exn hash = VersionTable.find versions hash
+
+let get hash =
+  try Some (get_exn hash)
+  with Not_found -> None
+*)
+
+(** Compiler *)
+
+(*
+let datadir = ref None
+let get_datadir () =
+  match !datadir with
+  | None -> fatal_error "not initialized"
+  | Some m -> m
+
+let init dir =
+  datadir := Some dir
+
+let create_files dir units =
+  Lwt_utils.remove_dir dir >>= fun () ->
+  Lwt_utils.create_dir dir >>= fun () ->
+  Lwt_list.map_s
+    (fun { Protocol.name; interface; implementation } ->
+       let name = String.lowercase_ascii name in
+       let ml = dir // (name ^ ".ml") in
+       let mli = dir // (name ^ ".mli") in
+       Lwt_utils.create_file ml implementation >>= fun () ->
+       match interface with
+       | None -> Lwt.return [ml]
+       | Some content ->
+           Lwt_utils.create_file mli content >>= fun () ->
+           Lwt.return [mli;ml])
+    units >>= fun files ->
+  let files = List.concat files in
+  Lwt.return files
+
+let extract dirname hash units =
+  let source_dir = dirname // Protocol_hash.to_short_b58check hash // "src" in
+  create_files source_dir units >|= fun _files ->
+  Tezos_compiler.Meta.to_file source_dir ~hash
+    (List.map (fun {Protocol.name} -> String.capitalize_ascii name) units)
+
+let do_compile hash units =
+  let datadir = get_datadir () in
+  let source_dir = datadir // Protocol_hash.to_short_b58check hash // "src" in
+  let log_file = datadir // Protocol_hash.to_short_b58check hash // "LOG" in
+  let plugin_file = datadir // Protocol_hash.to_short_b58check hash //
+                    Format.asprintf "protocol_%a.cmxs" Protocol_hash.pp hash
+  in
+  create_files source_dir units >>= fun _files ->
+  Tezos_compiler.Meta.to_file source_dir ~hash
+    (List.map (fun {Protocol.name} -> String.capitalize_ascii name) units);
+  let compiler_command =
+    (Sys.executable_name,
+     Array.of_list [Node_compiler_main.compiler_name; plugin_file; source_dir]) in
+  let fd = Unix.(openfile log_file [O_WRONLY; O_CREAT; O_TRUNC] 0o644) in
+  let pi =
+    Lwt_process.exec
+      ~stdin:`Close ~stdout:(`FD_copy fd) ~stderr:(`FD_move fd)
+      compiler_command in
+  pi >>= function
+  | Unix.WSIGNALED _ | Unix.WSTOPPED _ ->
+      log_error "INTERRUPTED COMPILATION (%s)" log_file;
+      Lwt.return false
+  | Unix.WEXITED x when x <> 0 ->
+      log_error "COMPILATION ERROR (%s)" log_file;
+      Lwt.return false
+  | Unix.WEXITED _ ->
+      try Dynlink.loadfile_private plugin_file; Lwt.return true
+      with Dynlink.Error err ->
+        log_error "Can't load plugin: %s (%s)"
+          (Dynlink.error_message err) plugin_file;
+        Lwt.return false
+
+let compile hash units =
+  if VersionTable.mem versions hash then
+    Lwt.return true
+  else begin
+    do_compile hash units >>= fun success ->
+    let loaded = VersionTable.mem versions hash in
+    if success && not loaded then
+      log_error "Internal error while compiling %a" Protocol_hash.pp hash;
+    Lwt.return loaded
+  end
+*)
+end
+  
   module type PACKED_PROTOCOL = sig
-    val hash : Protocol_hash.t
+    val hash : Hash.Protocol_hash.t
     include Updater.PROTOCOL
     val error_encoding : error Data_encoding.t
     val classify_errors : error list -> [ `Branch | `Temporary | `Permanent ]
     val pp : Format.formatter -> error -> unit
     val complete_b58prefix : Context.t -> string -> string list Lwt.t
   end
+  
+(*
+  packages:
+  zarith \
+  base64 \
+  calendar \
+  ezjsonm \
+  ipaddr.unix \
+  lwt.unix \
+  mtime.os \
+  nocrypto \
+*)
 
 end
+
+module Env = Make (struct let name = "testing" end) ()

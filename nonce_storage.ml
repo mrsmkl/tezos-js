@@ -7,6 +7,9 @@
 (*                                                                        *)
 (**************************************************************************)
 
+open Error_monad
+open Environment
+
 type t = Seed_repr.nonce
 type nonce = t
 let encoding = Seed_repr.nonce_encoding

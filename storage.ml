@@ -9,6 +9,9 @@
 
 open Tezos_hash
 open Storage_functors
+open Error_monad
+open Environment.Env
+open Hash
 
 (* This key should always be populated for every version of the
    protocol.  It's absence meaning that the context is empty. *)
@@ -545,11 +548,23 @@ module Rewards = struct
 
 end
 
+(*
 let activate ({ context = c } as s) h =
   Updater.activate c h >>= fun c -> Lwt.return { s with context = c }
 let fork_test_network ({ context = c } as s) protocol expiration =
   Updater.fork_test_network c ~protocol ~expiration >>= fun c ->
   Lwt.return { s with context = c }
+*)
+
+let activate ({ context = c } as s) h =
+  (* Updater.activate c h >>= fun c -> *)
+  Lwt.return { s with context = c }
+
+let fork_test_network ({ context = c } as s) protocol expiration =
+  (* Updater.fork_test_network c ~protocol ~expiration >>= fun c -> *)
+
+  Lwt.return { s with context = c }
+
 
 (** Resolver *)
 
