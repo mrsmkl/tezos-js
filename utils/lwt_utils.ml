@@ -562,6 +562,7 @@ let of_sockaddr = function
       | V6 addr -> Some (addr, port)
 
 let getaddrinfo ~passive ~node ~service =
+  Lwt.return [] (*
   let open Lwt_unix in
   getaddrinfo node service
     ( AI_SOCKTYPE SOCK_STREAM ::
@@ -571,3 +572,4 @@ let getaddrinfo ~passive ~node ~service =
       (fun { ai_addr } -> of_sockaddr ai_addr)
       addr in
   Lwt.return points
+*)

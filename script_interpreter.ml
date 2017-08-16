@@ -9,6 +9,7 @@
 
 open Error_monad
 open Environment
+(*
 open Tezos_context
 open Script
 open Script_typed_ir
@@ -16,14 +17,18 @@ open Script_ir_translator
 
 let dummy_code_fee = Tez.fifty_cents
 let dummy_storage_fee = Tez.fifty_cents
+*)
 
 (* ---- Run-time errors -----------------------------------------------------*)
 
+(*
 type error += Quota_exceeded
 type error += Overflow of Script.location
 type error += Reject of Script.location
 type error += Runtime_contract_error : Contract.t * Script.expr * _ ty * _ ty * _ ty -> error
+*)
 
+(*
 let () =
   let open Data_encoding in
   register_error_kind
@@ -71,9 +76,11 @@ let () =
       | _ -> None)
     (fun (contract, expr, Ex_ty arg_ty, Ex_ty ret_ty, Ex_ty storage_ty) ->
        Runtime_contract_error (contract, expr, arg_ty, ret_ty, storage_ty));
+*)
 
 (* ---- interpreter ---------------------------------------------------------*)
 
+(*
 type 'tys stack =
   | Item : 'ty * 'rest stack -> ('ty * 'rest) stack
   | Empty : end_of_stack stack
@@ -593,3 +600,5 @@ let trace origination orig source ctxt storage script amount arg qta =
 
 let execute orig source ctxt storage script amount arg qta =
   execute orig source ctxt storage script amount arg qta
+*)
+

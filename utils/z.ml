@@ -11,10 +11,29 @@ type t = Big_int.big_int
      let to_int64 = int64_of_big_int
      let of_int64 = big_int_of_int64
      
-     (* fix *)
-     let of_bits x = zero
-     let to_bits x = "01010110"
-     
+     (* fix .. blah no they were not like this *)
+     let of_bits str =
+       let res = ref zero in
+       for i = 0 to String.length str - 1 do
+         res := mult_big_int !res (of_int 256);
+         res := add_big_int !res (of_int (Char.code str.[String.length str - 1 - i]));
+       done;
+       !res
+
+
+     let rec to_bits_aux x =
+       if to_int x = 0 then "" else
+       let rest = to_bits_aux (div_big_int x (of_int 256)) in
+       String.make 1 (Char.chr (to_int (mod_big_int x (of_int 256)))) ^ rest
+
+     let to_bits x =
+       let res = to_bits_aux x in
+       if String.length res = 0 then "0" else res
+       
+       let _ =
+          prerr_endline (to_bits (of_int 0xefff));
+          prerr_endline (to_bits (of_bits "as"))
+
      let add = add_big_int
      let sub = sub_big_int
      let mul = mult_big_int

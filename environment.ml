@@ -22,7 +22,7 @@ module Ed25519 = struct
 
   let () =
     Base58.check_encoded_prefix Public_key_hash.b58check_encoding "tz1" 36
-
+    
     let sodium_Sign_public_key_size = 32
     let sodium_Sign_secret_key_size = 32
     let sodium_Sign_signature_size = 32
@@ -252,7 +252,7 @@ module Ed25519 = struct
     (Public_key.hash pub, pub, secret)
 
 end
-
+(*
 module Make(Param : sig val name: string end)() = struct
 
   include Pervasives
@@ -465,18 +465,10 @@ end
     val complete_b58prefix : Context.t -> string -> string list Lwt.t
   end
   
-(*
-  packages:
-  zarith \
-  base64 \
-  calendar \
-  ezjsonm \
-  ipaddr.unix \
-  lwt.unix \
-  mtime.os \
-  nocrypto \
-*)
 
 end
+*)
 
+(*
 module Env = Make (struct let name = "testing" end) ()
+*)

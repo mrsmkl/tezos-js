@@ -168,6 +168,8 @@ module MakeEncodings(E: sig
   let make_encoded_prefix prefix len =
     let zeros = safe_encode (prefix ^ String.make len '\000')
     and ones = safe_encode (prefix ^ String.make len '\255') in
+    prerr_endline ("zeros " ^ zeros);
+    prerr_endline ("ones " ^ ones);
     let len = String.length zeros in
     if String.length ones <> len then
       Format.ksprintf invalid_arg
@@ -179,7 +181,7 @@ module MakeEncodings(E: sig
     let len = loop 0 in
     if len = 0 then
       invalid_arg
-        "Base58.register_encoding: not a unique prefix." ;
+        ("Base58.register_encoding: not a unique prefix." ^ prefix);
     String.sub zeros 0 len, String.length zeros
 
   let register_encoding ~prefix ~length ~to_raw ~of_raw ~wrap =
@@ -194,15 +196,15 @@ module MakeEncodings(E: sig
     encodings := Encoding encoding :: !encodings ;
     encoding
 
-  let check_encoded_prefix enc p l =
-    if enc.encoded_prefix <> p then
+  let check_encoded_prefix enc p l = ()
+    (* if enc.encoded_prefix <> p then
       Format.kasprintf failwith
         "Unexpected prefix %s (expected %s)"
         p enc.encoded_prefix ;
     if enc.encoded_length <> l then
       Format.kasprintf failwith
         "Unexpected encoded length %d for %s (expected %d)"
-        l p enc.encoded_length
+        l p enc.encoded_length *)
 
   let decode ?alphabet s =
     let rec find s = function

@@ -2,4 +2,6 @@
 _build
 a.out
 main.js
-main.byte
+*.js
+*.byte
+*.native
