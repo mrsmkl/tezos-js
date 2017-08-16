@@ -520,8 +520,11 @@ module MakeImperativeProxy
                   let get = fetch session
                   and set k v = store session k v >>= fun _ -> Lwt.return_unit in
                   let timeout = Scheduler.request gstate ~get ~set requests in
+                  (*
                   if timeout > 0. then
                     Lwt.ignore_result (Lwt_unix.sleep timeout >|= worker_trigger);
+                  *)
+                  ()
             end;
             worker_loop ()
       in

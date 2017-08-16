@@ -147,7 +147,7 @@ let commit key ~time ~message context =
       GitStore.FunView.update_path
         (store message) [] context.view >>= fun () ->
      context.index.commits <- context.index.commits + 1 ;
-     if context.index.commits mod 200 = 0 then
+(*     if context.index.commits mod 200 = 0 then
        Lwt_utils.Idle_waiter.force_idle
          context.index.repack_scheduler
          (fun () ->
@@ -168,7 +168,7 @@ let commit key ~time ~message context =
                 lwt_log_error "git repack failed with code %d after  %0.2f sec"
                   code dt) >>= fun () ->
        Lwt.return ()
-     else
+     else *)
        Lwt.return ()
 
 (*-- Generic Store Primitives ------------------------------------------------*)

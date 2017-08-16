@@ -361,12 +361,14 @@ let sort = stable_sort
 let rec read_bytes ?(pos = 0) ?len fd buf =
   let len = match len with None -> Bytes.length buf - pos | Some l -> l in
   let rec inner pos len =
+      Lwt.return_unit
+      (*
     if len = 0 then
       Lwt.return_unit
     else
       Lwt_unix.read fd buf pos len >>= function
       | 0 -> Lwt.fail End_of_file (* other endpoint cleanly closed its connection *)
-      | nb_read -> inner (pos + nb_read) (len - nb_read)
+      | nb_read -> inner (pos + nb_read) (len - nb_read) *)
   in
   inner pos len
 
@@ -376,9 +378,10 @@ let read_mbytes ?(pos=0) ?len fd buf =
     if len = 0 then
       Lwt.return_unit
     else
-      Lwt_bytes.read fd buf pos len >>= function
+      Lwt.fail End_of_file (* other endpoint cleanly closed its connection *)
+      (* Lwt_bytes.read fd buf pos len >>= function
       | 0 -> Lwt.fail End_of_file (* other endpoint cleanly closed its connection *)
-      | nb_read -> inner (pos + nb_read) (len - nb_read)
+      | nb_read -> inner (pos + nb_read) (len - nb_read) *)
   in
   inner pos len
 
@@ -388,9 +391,11 @@ let write_mbytes ?(pos=0) ?len descr buf =
     if len = 0 then
       Lwt.return_unit
     else
+      Lwt.fail End_of_file (* other endpoint cleanly closed its connection *)
+    (*
       Lwt_bytes.write descr buf pos len >>= function
       | 0 -> Lwt.fail End_of_file (* other endpoint cleanly closed its connection *)
-      | nb_written -> inner (pos + nb_written) (len - nb_written) in
+      | nb_written -> inner (pos + nb_written) (len - nb_written) *) in
   inner pos len
 
 let write_bytes ?(pos=0) ?len descr buf =
@@ -399,15 +404,16 @@ let write_bytes ?(pos=0) ?len descr buf =
     if len = 0 then
       Lwt.return_unit
     else
-      Lwt_unix.write descr buf pos len >>= function
+      Lwt.fail End_of_file (* other endpoint cleanly closed its connection *)
+      (* Lwt_unix.write descr buf pos len >>= function
       | 0 -> Lwt.fail End_of_file (* other endpoint cleanly closed its connection *)
-      | nb_written -> inner (pos + nb_written) (len - nb_written) in
+      | nb_written -> inner (pos + nb_written) (len - nb_written) *) in
   inner pos len
 
 let (>>=) = Lwt.bind
 
 let remove_dir dir =
-  let rec remove dir =
+(*  let rec remove dir =
     let files = Lwt_unix.files_of_directory dir in
     Lwt_stream.iter_s
       (fun file ->
@@ -423,10 +429,12 @@ let remove_dir dir =
     Lwt_unix.rmdir dir in
   if Sys.file_exists dir && Sys.is_directory dir then
     remove dir
-  else
+  else *)
     Lwt.return ()
 
 let rec create_dir ?(perm = 0o755) dir =
+  failwith "Not a directory"
+  (*
   Lwt_unix.file_exists dir >>= function
   | false ->
       create_dir (Filename.dirname dir) >>= fun () ->
@@ -434,17 +442,20 @@ let rec create_dir ?(perm = 0o755) dir =
   | true ->
       Lwt_unix.stat dir >>= function
       | {st_kind = S_DIR} -> Lwt.return_unit
-      | _ -> failwith "Not a directory"
+      | _ -> failwith "Not a directory" *)
 
 let create_file ?(perm = 0o644) name content =
+  failwith "create_file"
+(*
   Lwt_unix.openfile name Unix.([O_TRUNC; O_CREAT; O_WRONLY]) perm >>= fun fd ->
   Lwt_unix.write_string fd content 0 (String.length content) >>= fun _ ->
   Lwt_unix.close fd
+*)
 
-let safe_close fd =
-  Lwt.catch
+let safe_close fd =Lwt.return ()
+(*  Lwt.catch
     (fun () -> Lwt_unix.close fd)
-    (fun _ -> Lwt.return_unit)
+    (fun _ -> Lwt.return_unit) *)
 
 open Error_monad
 
@@ -473,6 +484,8 @@ let protect ?on_error ?canceler t =
 type error += Timeout
 
 let with_timeout ?(canceler = Canceler.create ()) timeout f =
+      fail Timeout
+      (*
   let t = Lwt_unix.sleep timeout in
   Lwt.choose [
     (t >|= fun () -> None) ;
@@ -484,6 +497,7 @@ let with_timeout ?(canceler = Canceler.create ()) timeout f =
   | _ ->
       Canceler.cancel canceler >>= fun () ->
       fail Timeout
+*)
 
 let unless cond f =
   if cond then Lwt.return () else f ()
@@ -494,13 +508,13 @@ module Lock_file = struct
       ?(close_on_exec=true)
       ?(unlink_on_exit=false) fn =
     protect begin fun () ->
-      Lwt_unix.openfile fn Unix.[O_CREAT ; O_WRONLY; O_TRUNC] 0o644 >>= fun fd ->
+(*      Lwt_unix.openfile fn Unix.[O_CREAT ; O_WRONLY; O_TRUNC] 0o644 >>= fun fd ->
       if close_on_exec then Lwt_unix.set_close_on_exec fd ;
       Lwt_unix.lockf fd lock_command 0 >>= fun () ->
       if unlink_on_exit then
         Lwt_main.at_exit (fun () -> Lwt_unix.unlink fn) ;
       let pid_str = string_of_int @@ Unix.getpid () in
-      Lwt_unix.write_string fd pid_str 0 (String.length pid_str) >>= fun _ ->
+      Lwt_unix.write_string fd pid_str 0 (String.length pid_str) >>= fun _ -> *)
       return ()
     end
 
@@ -516,7 +530,7 @@ module Lock_file = struct
     | None -> create ()
     | Some duration -> with_timeout duration (fun _ -> create ())
 
-  let is_locked fn =
+  let is_locked fn = return false (*
     if not @@ Sys.file_exists fn then return false else
       protect begin fun () ->
         Lwt_unix.openfile fn [Unix.O_RDONLY] 0o644 >>= fun fd ->
@@ -526,9 +540,10 @@ module Lock_file = struct
               (fun () -> return false)
               (fun _ -> return true))
           (fun () -> Lwt_unix.close fd)
-      end
+      end *)
 
-  let get_pid fn =
+  let get_pid fn = failwith "get_pid"
+  (*
     let open Lwt_io in
     protect begin fun () ->
       with_file ~mode:Input fn begin fun ic ->
@@ -536,6 +551,7 @@ module Lock_file = struct
         return (int_of_string content)
       end
     end
+    *)
 end
 
 let of_sockaddr = function

@@ -9,6 +9,12 @@
 
 open Lwt.Infix
 
+module Lwt_log = struct
+   
+   include Lwt_log_js
+  type syslog_facility = [ `Auth | `Authpriv | `Cron ]
+end
+
 module type LOG = sig
 
   val debug: ('a, Format.formatter, unit, unit) format4 -> 'a
@@ -108,6 +114,8 @@ module Output = struct
     | Stdout -> "stdout"
     | Stderr -> "stderr"
     | File fp -> fp
+    | Syslog _ -> "syslog"
+    (*
     | Syslog `Auth -> "syslog:auth"
     | Syslog `Authpriv -> "syslog:authpriv"
     | Syslog `Cron -> "syslog:cron"
@@ -131,11 +139,13 @@ module Output = struct
     | Syslog `NTP -> "syslog:ntp"
     | Syslog `Security -> "syslog:security"
     | Syslog `Console -> "syslog:console"
+    *)
 
   let of_string : string -> t = function
     | "/dev/null" | "null" -> Null
     | "stdout" -> Stdout
     | "stderr" -> Stderr
+    (*
     | "syslog:auth" -> Syslog `Auth
     | "syslog:authpriv" -> Syslog `Authpriv
     | "syslog:cron" -> Syslog `Cron
@@ -159,6 +169,7 @@ module Output = struct
     | "syslog:ntp" -> Syslog `NTP
     | "syslog:security" -> Syslog `Security
     | "syslog:console" -> Syslog `Console
+    *)
     (* | s when start_with "syslog:" FIXME error or warning. *)
     | fp ->
         (* TODO check absolute path *)
@@ -183,25 +194,25 @@ module Output = struct
 end
 
 let init ?(template = default_template) output =
-  let open Output in
+  (* let open Output in
   begin
     match output with
     | Stderr ->
-        Lwt.return @@
-        Lwt_log.channel ~template ~close_mode:`Keep ~channel:Lwt_io.stderr ()
+        Lwt.return () (*@@
+        Lwt_log.channel ~template ~close_mode:`Keep ~channel:Lwt_io.stderr () *)
     | Stdout ->
-        Lwt.return @@
-        Lwt_log.channel ~template ~close_mode:`Keep ~channel:Lwt_io.stdout ()
-    | File file_name ->
-        Lwt_log.file ~file_name ~template ()
+        Lwt.return () (* @@
+        Lwt_log.channel ~template ~close_mode:`Keep ~channel:Lwt_io.stdout () *)
+    | File file_name -> Lwt.return ()
+        (* Lwt_log.file ~file_name ~template () *)
     | Null ->
-        Lwt.return @@
-        Lwt_log.null
+        Lwt.return () (* @@
+        Lwt_log.null *)
     | Syslog facility ->
-        Lwt.return @@
-        Lwt_log.syslog ~template ~facility ()
-  end >>= fun logger ->
-  Lwt_log.default := logger ;
+        Lwt.return () (* @@
+        Lwt_log.syslog ~template ~facility () *)
+  end >>= fun logger -> *)
+  Lwt_log.default := Lwt_log.console ;
   Lwt.return_unit
 
 type level = Lwt_log_core.level =
