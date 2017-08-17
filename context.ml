@@ -12,6 +12,7 @@
 open Error_monad
 open Logging.Db
 
+(*
 module IrminPath = Irmin.Path.String_list
 
 module MBytesContent = struct
@@ -23,7 +24,8 @@ module MBytesContent = struct
     let fn = Irmin.Merge.(option (module Tc_S0) (default (module Tc_S0))) in
     fun _path -> fn
 end
-
+*)
+(*
 module GitStore = struct
 
 (*  module Store =
@@ -72,6 +74,10 @@ module GitStore = struct
   end
 
 end
+
+*)
+
+
 
 type index = {
   path: string ;

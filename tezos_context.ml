@@ -8,8 +8,13 @@
 (**************************************************************************)
 
 open Environment.Env
+open Error_monad
 
+(*
 type t = Storage.t
+*)
+
+type t = unit
 type context = t
 
 module type BASIC_DATA = sig
@@ -19,12 +24,14 @@ module type BASIC_DATA = sig
   val pp: Format.formatter -> t -> unit
 end
 
+
 module Tez = Tez_repr
 module Period = Period_repr
 
 module Timestamp = struct
   include Time_repr
-  let current = Storage.current_timestamp
+  let current ctx = Time.now ()
+(*  let current = Storage.current_timestamp *)
 end
 
 include Operation_repr
@@ -35,7 +42,7 @@ end
 module Block_header = Block_header_repr
 module Vote = struct
   include Vote_repr
-  include Vote_storage
+(*  include Vote_storage *)
 end
 module Raw_level = Raw_level_repr
 module Cycle = Cycle_repr
@@ -51,6 +58,7 @@ include Tezos_hash
 
 module Constants = struct
   include Constants_repr
+  (*
   let cycle_length c =
     let constants = Storage.constants c in
     constants.cycle_length
@@ -78,54 +86,145 @@ module Constants = struct
   let dictator_pubkey c =
     let constants = Storage.constants c in
     constants.dictator_pubkey
+    *)
 end
 
-module Public_key = Public_key_storage
+module Public_key = struct
+   let default_key = Ed25519.Public_key.of_bytes (Bytes.create 32)
+   let get:
+    context -> public_key_hash -> public_key tzresult Lwt.t = fun ctx h -> return default_key
+
+end
+
+(* Public_key_storage *)
 
 module Voting_period = Voting_period_repr
 
+
+
 module Level = struct
   include Level_repr
-  include Level_storage
+(*include Level_storage*)
 end
 module Contract = struct
   include Contract_repr
+  
+  (*
   include Contract_storage
+  *)
+  let exists c key = return false
+  
+  (* val get_script:
+    context -> contract -> (Script.t option) tzresult Lwt.t *)
+  let get_script (ctx:context) (key:contract) :  (Script.t option) tzresult Lwt.t = return None
+  
+  type error += Initial_amount_too_low of contract * Tez.t * Tez.t
+  type error += Balance_too_low of contract * Tez.t * Tez.t
+
+let default_hash = Environment.Ed25519.Public_key_hash.of_string_exn "12345123451234512345"
+
+(*  val get_manager: context -> contract -> public_key_hash tzresult Lwt.t *)
+  let get_manager (ctx:context) (key:contract) : public_key_hash tzresult Lwt.t = return default_hash
+
+  let spend_from_script (ctx:context) (key:contract) (t:Tez.t) = return ctx
+
+  let originate :
+    context ->
+    origination_nonce ->
+    balance: Tez.t ->
+    manager: public_key_hash ->
+    ?script: (Script.t * (Tez.t * Tez.t)) ->
+    delegate: public_key_hash option ->
+    spendable: bool ->
+    delegatable: bool -> (context * contract * origination_nonce) tzresult Lwt.t = fun c nonce ~balance ~manager ?script ~delegate ~spendable ~delegatable ->
+       return (c, originated_contract nonce, nonce)
+
+  let credit:
+    context -> contract -> Tez.t -> context tzresult Lwt.t = fun ctx c t -> return ctx
+
+  let update_script_storage_and_fees:
+    context -> contract -> Tez.t -> Script.expr -> context tzresult Lwt.t = fun ctx c t expr -> return ctx
+  let get_balance:
+    context -> contract -> Tez.t tzresult Lwt.t = fun ctx c -> return (Tez.zero)
+
+(*  
+  val must_exist: context -> contract -> unit tzresult Lwt.t
+
+  val list: context -> contract list tzresult Lwt.t
+
+  type origination_nonce
+
+  val origination_nonce_encoding : origination_nonce Data_encoding.t
+  val originated_contract : origination_nonce -> contract
+  val originated_contracts : origination_nonce -> contract list
+
+  val initial_origination_nonce : Operation_hash.t -> origination_nonce
+
+  val get_delegate_opt:
+    context -> contract -> public_key_hash option tzresult Lwt.t
+  val is_delegatable:
+    context -> contract -> bool tzresult Lwt.t
+  val is_spendable:
+    context -> contract -> bool tzresult Lwt.t
+  
+  val get_storage:
+    context -> contract -> (Script.storage option) tzresult Lwt.t
+
+  val get_counter: context -> contract -> int32 tzresult Lwt.t
+
+  val set_delegate:
+    context -> contract -> public_key_hash option -> context tzresult Lwt.t
+
+
+
+  val spend:
+    context -> contract -> Tez.t -> context tzresult Lwt.t
+
+
+  val increment_counter:
+    context -> contract -> context tzresult Lwt.t
+
+  val check_counter_increment:
+    context -> contract -> int32 -> unit tzresult Lwt.t
+*)
+
 end
 module Roll = struct
   include Roll_repr
-  include Roll_storage
+(*  include Roll_storage *)
 end
-module Nonce = Nonce_storage
+(* module Nonce = Nonce_storage *)
 module Seed = struct
   include Seed_repr
-  include Seed_storage
+(*  include Seed_storage *)
 end
+(*
 module Bootstrap = Bootstrap_storage
 module Reward = Reward_storage
+*)
 
 module Fitness = struct
 
   include Fitness_repr
   include Fitness
   type fitness = t
-  include Fitness_storage
+(*  include Fitness_storage *)
 
 end
 
+(*
 let init = Init_storage.may_initialize
 
-(*
 let finalize ?commit_message:message c =
   let fitness = Fitness.from_int64 (Fitness.current c) in
   let context = Storage.recover c in
   { Updater.context ; fitness ; message ; max_operations_ttl = 60 }
-*)
 
 let configure_sandbox = Init_storage.configure_sandbox
 
 let activate = Storage.activate
 let fork_test_network = Storage.fork_test_network
+*)
 
 
 

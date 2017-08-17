@@ -563,6 +563,8 @@ let rec unparse_stack
     | Empty_t -> []
     | Item_t (ty, rest) -> unparse_ty ty :: unparse_stack rest
 
+type context = unit
+
 let rec parse_data
   : type a.
     ?type_logger: (int * (Script.expr list * Script.expr list) -> unit) ->

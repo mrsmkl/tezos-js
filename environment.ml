@@ -252,7 +252,6 @@ module Ed25519 = struct
     (Public_key.hash pub, pub, secret)
 
 end
-(*
 module Make(Param : sig val name: string end)() = struct
 
   include Pervasives
@@ -265,6 +264,7 @@ module Make(Param : sig val name: string end)() = struct
     include EndianBytes.BigEndian
     module LE = EndianBytes.LittleEndian
   end
+  
   module String = struct
     include String
     include EndianString.BigEndian
@@ -280,7 +280,7 @@ module Make(Param : sig val name: string end)() = struct
   module Hex_encode = Hex_encode
   
   module Z = Z
-  
+
   module Lwt_sequence = Lwt_sequence
   module Lwt = Lwt
   module Lwt_list = Lwt_list
@@ -298,25 +298,30 @@ module Make(Param : sig val name: string end)() = struct
     type error_category = [ `Branch | `Temporary | `Permanent ]
     include Error_monad.Make()
   end*)
-  
+
   module Logging = Logging.Make(Param)
   module Base58 = struct
     include Base58
     let simple_encode enc s = simple_encode enc s
     let simple_decode enc s = simple_decode enc s
+(*
     include Make(struct type context = Context.t end)
     let decode s = decode s
+  *)
   end
   
   
   module Fitness = Tezos_data.Fitness
   module Persist = Persist
+  (*
   module Context = struct
     include Context
     let register_resolver = Base58.register_resolver
     let complete ctxt s = Base58.complete ctxt s
   end
+  *)
 
+(*
   module Updater = struct
 
 (* open Logging.Updater *)
@@ -464,11 +469,10 @@ end
     val pp : Format.formatter -> error -> unit
     val complete_b58prefix : Context.t -> string -> string list Lwt.t
   end
-  
+*)  
 
 end
-*)
 
-(*
 module Env = Make (struct let name = "testing" end) ()
-*)
+
+

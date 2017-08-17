@@ -167,7 +167,7 @@ module Make_minimal_Blake2B (K : Name) = struct
     match K.size with
     | None -> 32
     | Some x -> x
-
+    
   let of_string s =
     if String.length s <> size then
       None
@@ -177,8 +177,8 @@ module Make_minimal_Blake2B (K : Name) = struct
     match of_string s with
     | None ->
         let msg =
-          Printf.sprintf "%s.of_string: wrong string size (%d)"
-            K.name (String.length s) in
+          Printf.sprintf "%s.of_string: wrong string size (%d), expected %d"
+            K.name (String.length s) size in
         raise (Invalid_argument msg)
     | Some h -> h
   let to_string s = Bytes.to_string (sodium_Generichash_Bytes_of_hash s)
