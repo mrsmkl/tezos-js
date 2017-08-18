@@ -4,4 +4,4 @@ a.out
 main.js
 *.js
 *.byte
-*.native
+*.native.merlin
