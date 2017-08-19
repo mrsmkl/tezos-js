@@ -9,3 +9,12 @@ TODO:
  * Test in browser
  * Make more stubs so the original files can be used directly
 
+Building:
+```
+jbuilder build run.bc.js
+```
+
+Test:
+```
+node _build/default/run.bc.js
+```
