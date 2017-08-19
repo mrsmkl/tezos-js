@@ -155,6 +155,16 @@ module Make() = struct
 
   let registred_errors () = !error_kinds
 
+  let pp_print_error ppf errors =
+    match errors with
+    | [] ->
+        Format.fprintf ppf "Unknown error@."
+    | [error] ->
+        Format.fprintf ppf "@[<v 2>Error:@ %a@]@." pp error
+    | errors ->
+        Format.fprintf ppf "@[<v 2>Error, dumping error stack:@,%a@]@."
+          (Format.pp_print_list pp)
+          (List.rev errors)
 
   (*-- Monad definition --------------------------------------------------------*)
 
@@ -194,7 +204,9 @@ module Make() = struct
 
   let (>>=?) v f =
     v >>= function
-    | Error _ as err -> Lwt.return err
+    | Error e as err ->
+       let _ = pp_print_error Format.err_formatter e in
+       Lwt.return err
     | Ok v -> f v
 
   let (>>|?) v f = v >>=? fun v -> Lwt.return (Ok (f v))
@@ -357,16 +369,7 @@ module Make() = struct
   let _when cond f =
     if cond then f () else return ()
 
-  let pp_print_error ppf errors =
-    match errors with
-    | [] ->
-        Format.fprintf ppf "Unknown error@."
-    | [error] ->
-        Format.fprintf ppf "@[<v 2>Error:@ %a@]@." pp error
-    | errors ->
-        Format.fprintf ppf "@[<v 2>Error, dumping error stack:@,%a@]@."
-          (Format.pp_print_list pp)
-          (List.rev errors)
+
 
 type error += Unclassified of string
 

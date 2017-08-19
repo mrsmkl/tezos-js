@@ -764,6 +764,7 @@ and parse_lambda
           (Lwt.return (ty_eq ty ret)) >>=? fun (Eq _) ->
         return (Lam (descr, script_instr) : (arg, ret) lambda)
     | Typed { loc ; aft = stack_ty } ->
+        let _ = prerr_endline "bad return" in
         fail (Bad_return (loc, stack_ty, ret))
     | Failed { descr } ->
         return (Lam (descr (Item_t (ret, Empty_t)), script_instr) : (arg, ret) lambda)

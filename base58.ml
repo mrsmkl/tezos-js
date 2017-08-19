@@ -168,8 +168,7 @@ module MakeEncodings(E: sig
   let make_encoded_prefix prefix len =
     let zeros = safe_encode (prefix ^ String.make len '\000')
     and ones = safe_encode (prefix ^ String.make len '\255') in
-    prerr_endline ("zeros " ^ zeros);
-    prerr_endline ("ones " ^ ones);
+(*    prerr_endline ("zeros " ^ zeros); prerr_endline ("ones " ^ ones); *)
     let len = String.length zeros in
     if String.length ones <> len then
       Format.ksprintf invalid_arg

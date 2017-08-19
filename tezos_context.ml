@@ -226,5 +226,7 @@ let activate = Storage.activate
 let fork_test_network = Storage.fork_test_network
 *)
 
+let empty_context = ()
+
 
 

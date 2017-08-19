@@ -1,5 +1,6 @@
 parameter string;
 return string;
 storage unit;
-code {};
+code { DUP;
+       DROP }
 

@@ -11,7 +11,6 @@ type t = Big_int.big_int
      let to_int64 = int64_of_big_int
      let of_int64 = big_int_of_int64
      
-     (* fix .. blah no they were not like this *)
      let of_bits str =
        let res = ref zero in
        for i = 0 to String.length str - 1 do
@@ -30,9 +29,11 @@ type t = Big_int.big_int
        let res = to_bits_aux x in
        if String.length res = 0 then "0" else res
        
+       (*
        let _ =
           prerr_endline (to_bits (of_int 0xefff));
           prerr_endline (to_bits (of_bits "as"))
+       *)
 
      let add = add_big_int
      let sub = sub_big_int
