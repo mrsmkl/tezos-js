@@ -287,6 +287,8 @@ let rec interp
           | Neg_nat, Item (x, rest) ->
               logged_return (Item (Script_int.neg x, rest), qta - 1, ctxt)
           | Add_intint, Item (x, Item (y, rest)) ->
+              let res = Script_int.add x y in
+              let _ = prerr_endline (Z.to_string res) in
               logged_return (Item (Script_int.add x y, rest), qta - 1, ctxt)
           | Add_intnat, Item (x, Item (y, rest)) ->
               logged_return (Item (Script_int.add x y, rest), qta - 1, ctxt)

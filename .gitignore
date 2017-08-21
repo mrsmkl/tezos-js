@@ -6,3 +6,4 @@ main.js
 *.byte
 *.native
 .merlin
+node_modules

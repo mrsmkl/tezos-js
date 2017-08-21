@@ -3,15 +3,14 @@
 (ocamllex (concrete_lexer))
 (menhir ((modules (concrete_parser))))
 
-;; This declare the hello_world executable implemented by hello_world.ml
 (executable(
-   (name run)
+   (name browser)
    (libraries (ezjsonm ipaddr.unix lwt ocplib-json-typed.bson js_of_ocaml-lwt.logger
               js_of_ocaml js_of_ocaml.ppx ocplib-resto.directory calendar num cstruct))
    (preprocess (pps (js_of_ocaml.ppx)))
    (js_of_ocaml (
+;;    (flags (:standard))
     (flags (:standard "+weak.js" "+nat.js"))
-   )) 
-;;   (modes      (byte))
+   ))
 ))
 

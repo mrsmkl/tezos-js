@@ -7,7 +7,9 @@ for example cannot have multiple contracts, and at least none of the cryptograph
 TODO:
  * Better command-line tool for node.js
  * Test in browser
+ * Check that zarith wrapper works
  * Make more stubs so the original files can be used directly
+ * Cryptographic primitives
 
 Building:
 ```

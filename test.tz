@@ -1,6 +1,10 @@
 parameter string;
 return string;
 storage unit;
-code { DUP;
+code { DUP ;
+       PUSH int 100 ;
+       PUSH int 200 ;
+       ADD ;
+       DROP ;
        DROP }
 

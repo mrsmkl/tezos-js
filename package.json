@@ -1,0 +1,6 @@
+
+{
+ "name": "browser-michelson",
+ "browser": "_build/default/browser.js"
+}
+

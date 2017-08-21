@@ -1,0 +1,34 @@
+<!doctype html>
+
+<title>Michelson interpreter in browser</title>
+
+<p>
+    
+    Code:<br>
+<textarea id="code" cols="100" rows="10">parameter unit;
+storage unit;
+return unit;
+code { DUP;
+       DROP }
+</textarea>
+
+<p>
+    Storage:<br>
+<textarea id="instorage" cols="100" rows="3">Unit
+</textarea>
+
+    <p> Storage type: <input id="storagetype" value="unit">
+
+    <p> Input: <input id="callinput" value="Unit">
+
+<p> <button id="run_button">Run</button>        
+<p> Output:<div id=calloutput></div>
+<p> New storage: <div id=outstorage></div>
+
+<script src="browser.js"></script>
+<!---
+<script src="_build/default/browser.bc.js"></script>
+
+
+--->
+
