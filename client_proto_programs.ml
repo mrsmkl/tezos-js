@@ -9,12 +9,15 @@
 
 module Ed25519 = Environment.Ed25519
 open Tezos_context
-
+open Error_monad
 (*
 open Client_proto_args
 *)
 
 let report_parse_error _prefix exn _lexbuf =
+  prerr_endline "reporting parse error";
+  fail (Exn exn)
+  (*
   let open Lexing in
   let open Script_located_ir in
   let print_loc ppf (s, e) =
@@ -42,6 +45,7 @@ let report_parse_error _prefix exn _lexbuf =
       failwith "%s" s
   | exn ->
       failwith "%s" @@ Printexc.to_string exn
+*)
 
 let print_location_mark ppf = function
   | None -> ()

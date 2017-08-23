@@ -2,30 +2,77 @@
 
 <title>Michelson interpreter in browser</title>
 
-<p>
+<style type="text/css" media="screen">
+    @import url('https://fonts.googleapis.com/css?family=Cousine|Merriweather');
     
-    Code:<br>
-<textarea id="code" cols="100" rows="10">parameter unit;
+    body {
+        font-family: 'Merriweather', serif;
+        background: linear-gradient(to right, hsl(123,50%,95%) 0%,hsl(123,40%,90%) 43%, hsl(123,30%,90%) 69%, hsl(123,20%,90%) 100%);
+    }
+    
+    textarea {
+        font-family: 'Cousine', monospace;
+    }
+    
+    input {
+        font-family: 'Cousine', monospace;
+        width: 100%;
+    }
+    
+    table.fill {
+        width: 100%;
+    }
+    
+    #code_editor {
+/*        position: absolute;
+        top: 0;
+        right: 30%;
+        bottom: 0;
+        left: 0; */
+        width: 50vw;
+        height: 90vh;
+    }
+    
+    td.side {
+        padding-left: 10px;
+    }
+    
+</style>
+
+<table><tr><td>
+<div id="code_editor">parameter unit;
 storage unit;
 return unit;
 code { DUP;
        DROP }
-</textarea>
+</div>
+    </td><td  class="side">
 
 <p>
     Storage:<br>
-<textarea id="instorage" cols="100" rows="3">Unit
+<textarea id="instorage" cols="50" rows="10">Unit
 </textarea>
 
-    <p> Storage type: <input id="storagetype" value="unit">
-
-    <p> Input: <input id="callinput" value="Unit">
-
+    <table class="fill">
+        <tr><td>Storage type:</td><td><input id="storagetype" value="unit"></td></tr>
+        <tr><td>Input:</td><td><input id="callinput" value="Unit"></td></tr>
+    </table>
 <p> <button id="run_button">Run</button>        
 <p> Output:<div id=calloutput></div>
 <p> New storage: <div id=outstorage></div>
 
+    </td></tr></table>
+
+<script src="ace-builds/src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+<script>
+    var editor = ace.edit("code_editor");
+    editor.setTheme("ace/theme/monokai");
+    var session = editor.getSession()
+    session.setMode("ace/mode/michelson");
+</script>
+
 <script src="browser.js"></script>
+    
 <!---
 <script src="_build/default/browser.bc.js"></script>
 
