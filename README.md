@@ -7,8 +7,14 @@ for example cannot have multiple contracts, and at least none of the cryptograph
 TODO:
  * Better command-line tool for node.js
  * Check that zarith wrapper works
- * ACE or Codemirror editor
- * Error reporting integrated into the editor
  * Make more stubs so the original files can be used directly
+ * Implement a context to store contracts
  * Cryptographic primitives
 
+Building: (OCaml 4.04.2 suggested.)
+```
+opam install ezjsonm ipaddr lwt ocplib-json-typed js_of_ocaml-lwt js_of_ocaml ocplib-resto calendar num cstruct js_of_ocaml jbuilder
+sudo npm install -g browserify
+npm install browserify-fs
+./compile.sh
+```
