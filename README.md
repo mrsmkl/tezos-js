@@ -6,17 +6,9 @@ for example cannot have multiple contracts, and at least none of the cryptograph
 
 TODO:
  * Better command-line tool for node.js
- * Test in browser
  * Check that zarith wrapper works
+ * ACE or Codemirror editor
+ * Error reporting integrated into the editor
  * Make more stubs so the original files can be used directly
  * Cryptographic primitives
 
-Building:
-```
-jbuilder build run.bc.js
-```
-
-Test:
-```
-node _build/default/run.bc.js
-```
