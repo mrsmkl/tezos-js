@@ -3,8 +3,8 @@
 (ocamllex (concrete_lexer))
 (menhir ((modules (concrete_parser))))
 
-(executable(
-   (name browser)
+(executables (
+   (names (browser binding))
    (libraries (ezjsonm ipaddr.unix lwt ocplib-json-typed.bson js_of_ocaml-lwt.logger
               js_of_ocaml js_of_ocaml.ppx ocplib-resto.directory calendar num cstruct))
    (preprocess (pps (js_of_ocaml.ppx)))

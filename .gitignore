@@ -2,7 +2,8 @@
 _build
 a.out
 main.js
-*.js
+browser.js
+run.js
 *.byte
 *.native
 .merlin
