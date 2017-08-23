@@ -13,9 +13,49 @@ open Error_monad
 (*
 type t = Storage.t
 *)
+open Hash
+include Tezos_hash
 
-type t = unit
+type public_key = Ed25519.Public_key.t
+type public_key_hash = Ed25519.Public_key_hash.t
+type secret_key = Ed25519.Secret_key.t
+type signature = Ed25519.Signature.t
+
+
+module ContractMap = Map.Make (struct
+  type t = Contract_hash.t
+  let compare = compare
+end)
+
+module AccountMap = Map.Make (struct
+  type t = Ed25519.Public_key_hash.t
+  let compare = compare
+end)
+
+let default_hash = Environment.Ed25519.Public_key_hash.of_string_exn "12345123451234512345"
+
+module Tez = Tez_repr
+module Period = Period_repr
+
+
+
+type account = {
+  balance : Tez.t;
+  script : Script_repr.t option;
+  manager : public_key_hash;
+}
+
+type t = {
+   accounts : account AccountMap.t;
+   contracts : account ContractMap.t;
+}
+
 type context = t
+
+let empty_context = {
+  accounts = AccountMap.empty;
+  contracts = ContractMap.empty;
+}
 
 module type BASIC_DATA = sig
   type t
@@ -24,9 +64,6 @@ module type BASIC_DATA = sig
   val pp: Format.formatter -> t -> unit
 end
 
-
-module Tez = Tez_repr
-module Period = Period_repr
 
 module Timestamp = struct
   include Time_repr
@@ -48,13 +85,6 @@ module Raw_level = Raw_level_repr
 module Cycle = Cycle_repr
 module Script_int = Script_int_repr
 module Script = Script_repr
-
-type public_key = Ed25519.Public_key.t
-type public_key_hash = Ed25519.Public_key_hash.t
-type secret_key = Ed25519.Secret_key.t
-type signature = Ed25519.Signature.t
-
-include Tezos_hash
 
 module Constants = struct
   include Constants_repr
@@ -112,21 +142,58 @@ module Contract = struct
   (*
   include Contract_storage
   *)
-  let exists c key = return false
+  
+  let find c = function
+   | Default x -> AccountMap.find x c.accounts
+   | Originated x -> ContractMap.find x c.contracts
+  
+  let update c k f = match k with
+   | Default x ->
+      let y = AccountMap.find x c.accounts in
+      {c with accounts=AccountMap.add x (f y) c.accounts}
+   | Originated x ->
+      let y = ContractMap.find x c.contracts in
+      {c with contracts=ContractMap.add x (f y) c.contracts}
+  
+  let updateM c k (f:account -> account tzresult Lwt.t) = match k with
+   | Default x ->
+      let y = AccountMap.find x c.accounts in
+      f y >>=? fun res ->
+      return {c with accounts=AccountMap.add x res c.accounts}
+   | Originated x ->
+      let y = ContractMap.find x c.contracts in
+      f y >>=? fun res ->
+      return {c with contracts=ContractMap.add x res c.contracts}
+  
+  let exists c key = match key with
+   | Default x -> return (AccountMap.mem x c.accounts)
+   | Originated x -> return (ContractMap.mem x c.contracts)
   
   (* val get_script:
     context -> contract -> (Script.t option) tzresult Lwt.t *)
-  let get_script (ctx:context) (key:contract) :  (Script.t option) tzresult Lwt.t = return None
+  let get_script (ctx:context) (key:contract) :  (Script.t option) tzresult Lwt.t =
+    try return (find ctx key).script
+    with Not_found -> return None
   
   type error += Initial_amount_too_low of contract * Tez.t * Tez.t
   type error += Balance_too_low of contract * Tez.t * Tez.t
 
-let default_hash = Environment.Ed25519.Public_key_hash.of_string_exn "12345123451234512345"
-
 (*  val get_manager: context -> contract -> public_key_hash tzresult Lwt.t *)
-  let get_manager (ctx:context) (key:contract) : public_key_hash tzresult Lwt.t = return default_hash
+  let get_manager (ctx:context) (key:contract) : public_key_hash tzresult Lwt.t =
+    return (find ctx key).manager
 
-  let spend_from_script (ctx:context) (key:contract) (t:Tez.t) = return ctx
+  let spend_from_script (ctx:context) (key:contract) (t:Tez.t) =
+     updateM ctx key (fun a -> begin
+        Lwt.return (Tez.(-?) a.balance t) >>=? fun res ->
+        return {a with balance=res}
+     end)
+
+  let credit:
+    context -> contract -> Tez.t -> context tzresult Lwt.t = fun ctx key t ->
+     updateM ctx key (fun a -> begin
+        Lwt.return (Tez.(+?) a.balance t) >>=? fun res ->
+        return {a with balance=res}
+     end)
 
   let originate :
     context ->
@@ -138,9 +205,6 @@ let default_hash = Environment.Ed25519.Public_key_hash.of_string_exn "1234512345
     spendable: bool ->
     delegatable: bool -> (context * contract * origination_nonce) tzresult Lwt.t = fun c nonce ~balance ~manager ?script ~delegate ~spendable ~delegatable ->
        return (c, originated_contract nonce, nonce)
-
-  let credit:
-    context -> contract -> Tez.t -> context tzresult Lwt.t = fun ctx c t -> return ctx
 
   let update_script_storage_and_fees:
     context -> contract -> Tez.t -> Script.expr -> context tzresult Lwt.t = fun ctx c t expr -> return ctx
@@ -226,7 +290,6 @@ let activate = Storage.activate
 let fork_test_network = Storage.fork_test_network
 *)
 
-let empty_context = ()
 
 
 

@@ -93,6 +93,7 @@ let get_info err =
   let open Script_interpreter in
   match err with
   | Exn (Script_located_ir.Missing_program_field a) -> (1, "Missing program field " ^ a)
+  | Exn (Script_located_ir.Illegal_character (loc,chr)) -> (1, "Illegal character " ^ String.make 1 chr)
   | Script_ir_translator.Invalid_primitive (loc, exp, got) ->
     (loc, "Invalid primitive " ^ got)
   | Script_ir_translator.Invalid_case (loc, got) -> (loc, "Invalid primitive name case " ^ got)
@@ -105,8 +106,8 @@ let get_info err =
     let _ = print_expr no_locations Format.str_formatter (Script.Seq (0,Script_ir_translator.unparse_stack got)) in
     let ret_str = Format.flush_str_formatter () in
     (loc, "Bad stack type for " ^ name ^ ": " ^ ret_str)
-  | Ill_typed_data (name, expr, ty) -> (0, "Ill typed data " ^ expr_to_string expr ^ " expected " ^ expr_to_string (Script_ir_translator.unparse_ty ty))
-  | Ill_formed_type (name, expr) -> (0, "Ill formed type " ^ expr_to_string expr)
+  | Ill_typed_data (name, expr, ty) -> (1, "Ill typed data " ^ expr_to_string expr ^ " expected " ^ expr_to_string (Script_ir_translator.unparse_ty ty))
+  | Ill_formed_type (name, expr) -> (1, "Ill formed type " ^ expr_to_string expr)
   | Runtime_contract_error (contract, expr, arg_ty, ret_ty, storage_ty) -> (0, "Runtime error at " ^ expr_to_string expr)
   | Invalid_arity (loc, name, exp, got) -> (loc, Printf.sprintf "Primitive %s expects %d arguments but is given %d." name exp got)
   | Invalid_namespace (loc, name, exp, got) ->
@@ -142,8 +143,8 @@ let get_info err =
           (stack_type_to_string sta)
           (stack_type_to_string stb))
   | Transfer_in_lambda loc -> (loc, "The TRANSFER_TOKENS instruction cannot appear in a lambda.")
-    | Bad_stack_length -> (0, "Bad stack length.")
-    | Bad_stack_item lvl -> (0, Printf.sprintf "Bad stack item %d ." lvl)
+    | Bad_stack_length -> (1, "Bad stack length.")
+    | Bad_stack_item lvl -> (1, Printf.sprintf "Bad stack item %d ." lvl)
     | Invalid_constant (loc, got, exp) -> (loc,
         Printf.sprintf
           "Value %s is invalid for type %s." (expr_to_string got) (type_to_string exp))
@@ -153,9 +154,10 @@ let get_info err =
         (loc, Printf.sprintf "Comparable type expected. Type %s is not comparable."
           (type_to_string ty))
     | Inconsistent_types (tya, tyb) ->
-        (0, Printf.sprintf "Type %s is not compatible with type %s." (type_to_string tya) (type_to_string tyb))
-    | Reject _ -> (0, "Script reached FAIL instruction")
-    | Overflow _ -> (0, "Unexpected arithmetic overflow")
+        (1, Printf.sprintf "Type %s is not compatible with type %s." (type_to_string tya) (type_to_string tyb))
+    | Reject _ -> (1, "Script reached FAIL instruction")
+    | Overflow _ -> (1, "Unexpected arithmetic overflow")
+    | Exn Concrete_parser.Error -> (1, "Parse error")
   | _ -> (1, "Fix error reporting")
 
 let set_annotations lst loc_map =
@@ -186,13 +188,16 @@ let type_elem = get_textinput "storagetype"
 let storage_elem = get_text "#instorage"
 let output_elem = Js.Opt.get (document##getElementById (js"calloutput")) (fun () -> assert false)
 let outstorage_elem = Js.Opt.get (document##getElementById (js"outstorage")) (fun () -> assert false)
+(*
 let button_elem = Js.Opt.get (document##getElementById (js"run_button")) (fun () -> assert false)
+*)
 
 let error_lst = ref []
 
 let report x = x >>= function
  | Ok a -> Lwt.return (Ok a)
  | Pervasives.Error lst ->
+   prerr_endline "here";
    error_lst := lst @ !error_lst;
    Lwt.return (Pervasives.Error lst)
 
@@ -224,11 +229,12 @@ let update _ =
        return ()
   end;
   prerr_endline ("errs: " ^ string_of_int (List.length !error_lst));
-  set_annotations (List.map get_info !error_lst) !locs;
   (* Set annotations *)
-  Js._false
+  set_annotations (List.map get_info !error_lst) !locs;
+  ()
 
 let _ =
-  button_elem##.onclick := Html.handler update;
+  (* button_elem##.onclick := Html.handler update; *)
+  Html.window##setInterval (Js.wrap_callback update) 1000.0;
   ()
 
