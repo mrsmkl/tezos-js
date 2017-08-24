@@ -208,7 +208,6 @@ let execute (dta : data Js.t) =
   let stor_str = Js.to_string dta##.storage in
   let type_str = Js.to_string dta##.storagetype in
   let input_str = Js.to_string dta##.input in
-  prerr_endline ("Storage type " ^ type_str);
   error_lst := [];
   let locs = ref [] in
   let helper = ref None in

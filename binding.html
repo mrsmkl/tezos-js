@@ -1,8 +1,8 @@
 <!doctype html>
 
-<script src="bundle.js"></script>
+<script src="binding.js"></script>
 
 <script>
-    require("binding-commonjs")
-//    michelsonjs.execute({code:"parameter unit;\nstorage unit;\nreturn unit;\ncode { DUP;\n       DROP }", storage:"Unit", storagetype:"unit", input:"Unit"})
+    var michelsonjs = require("michelsonjs")
+    michelsonjs.execute({code:"parameter unit;\nstorage unit;\nreturn unit;\ncode { DUP;\n       DROP }", storage:"Unit", storagetype:"unit", input:"Unit"})
 </script>
