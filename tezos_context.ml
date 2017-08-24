@@ -43,6 +43,7 @@ type account = {
   balance : Tez.t;
   script : Script_repr.t option;
   manager : public_key_hash;
+  storage : Script_repr.expr;
 }
 
 type t = {
@@ -147,6 +148,10 @@ module Contract = struct
    | Default x -> AccountMap.find x c.accounts
    | Originated x -> ContractMap.find x c.contracts
   
+  let insert c k acc = match k with
+   | Default x -> {c with accounts = AccountMap.add x acc c.accounts}
+   | Originated x -> {c with contracts = ContractMap.add x acc c.contracts}
+  
   let update c k f = match k with
    | Default x ->
       let y = AccountMap.find x c.accounts in
@@ -195,6 +200,15 @@ module Contract = struct
         return {a with balance=res}
      end)
 
+  let get_balance:
+    context -> contract -> Tez.t tzresult Lwt.t = fun ctx c -> try return (find ctx c).balance with Not_found -> failwith "blah"
+
+  let update_script_storage_and_fees:
+    context -> contract -> Tez.t -> Script.expr -> context tzresult Lwt.t = fun ctx key fee storage ->
+     updateM ctx key (fun a -> begin
+        return {a with storage=storage}
+     end)
+
   let originate :
     context ->
     origination_nonce ->
@@ -204,12 +218,15 @@ module Contract = struct
     delegate: public_key_hash option ->
     spendable: bool ->
     delegatable: bool -> (context * contract * origination_nonce) tzresult Lwt.t = fun c nonce ~balance ~manager ?script ~delegate ~spendable ~delegatable ->
-       return (c, originated_contract nonce, nonce)
-
-  let update_script_storage_and_fees:
-    context -> contract -> Tez.t -> Script.expr -> context tzresult Lwt.t = fun ctx c t expr -> return ctx
-  let get_balance:
-    context -> contract -> Tez.t tzresult Lwt.t = fun ctx c -> return (Tez.zero)
+       let key = originated_contract nonce in
+       let code = match script with None -> None | Some (s,_) -> Some s in
+       let contr = {
+         balance = balance;
+         manager = manager;
+         script = code;
+         storage = Script.Seq (1, []);
+       } in
+       return (insert c key contr, key, incr_origination_nonce nonce)
 
 (*  
   val must_exist: context -> contract -> unit tzresult Lwt.t

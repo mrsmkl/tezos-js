@@ -247,7 +247,8 @@ end
 
 let exported : exported Js.t =
   let empty = Js.Unsafe.obj [||] in
-  Js.Unsafe.global##.michelsonjs := empty;
+(*  Js.Unsafe.global##.michelsonjs := empty; *)
+  CommonJS.export empty;
   empty
 
 let _ =
