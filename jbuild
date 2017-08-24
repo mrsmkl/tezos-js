@@ -4,12 +4,11 @@
 (menhir ((modules (concrete_parser))))
 
 (executables (
-   (names (browser binding))
-   (libraries (ezjsonm ipaddr.unix lwt ocplib-json-typed.bson js_of_ocaml-lwt.logger
+   (names (browser binding binding-commonjs))
+   (libraries (ezjsonm ipaddr.unix commonjs commonjs_ppx lwt ocplib-json-typed.bson js_of_ocaml-lwt.logger
               js_of_ocaml js_of_ocaml.ppx ocplib-resto.directory calendar num cstruct))
-   (preprocess (pps (js_of_ocaml.ppx)))
+   (preprocess (pps (js_of_ocaml.ppx commonjs_ppx)))
    (js_of_ocaml (
-;;    (flags (:standard))
     (flags (:standard "+weak.js" "+nat.js"))
    ))
 ))
