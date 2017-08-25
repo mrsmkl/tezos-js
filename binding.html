@@ -7,6 +7,6 @@
 <script>
     var michelsonjs = require("michelsonjs")
     console.log(michelsonjs.typecheck("parameter unit;\nstorage unit;\nreturn unit;\ncode { DUP;\n       DROP }"))
-    var res = michelsonjs.execute({code:"parameter unit;\nstorage unit;\nreturn unit;\ncode { DUP;\n       DROP }", storage:"Unit", input:"Unit"})
-    console.log(res)
+    console.log(michelsonjs.trace({code:"parameter unit;\nstorage unit;\nreturn unit;\ncode { DUP;\n       DROP }", storage:"Unit", input:"Unit"}))
+    console.log(michelsonjs.execute({code:"parameter unit;\nstorage unit;\nreturn unit;\ncode { DUP;\n       DROP }", storage:"Unit", input:"Unit"}))
 </script>

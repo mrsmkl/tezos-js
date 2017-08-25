@@ -54,7 +54,6 @@ code { DUP;
 </textarea>
 
     <table class="fill">
-        <tr><td>Storage type:</td><td><input id="storagetype" value="unit"></td></tr>
         <tr><td>Input:</td><td><input id="callinput" value="Unit"></td></tr>
     </table>
 <p> Output:<div id=calloutput></div>
@@ -63,14 +62,31 @@ code { DUP;
     </td></tr></table>
 
 <script src="ace-builds/src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+<script src="binding.js"></script>
 <script>
-    var editor = ace.edit("code_editor");
-    editor.setTheme("ace/theme/monokai");
+    var michelsonjs = require("michelsonjs")
+    var editor = ace.edit("code_editor")
+    editor.setTheme("ace/theme/monokai")
     var session = editor.getSession()
-    session.setMode("ace/mode/michelson");
+    session.setMode("ace/mode/michelson")
+    
+    function update() {
+        var res = michelsonjs.execute({
+            code:editor.getValue(),
+            storage:document.querySelector("#instorage").value,
+            input:document.querySelector("#callinput").value})
+        console.log(res)
+        if (res.storage) {
+            document.querySelector("#outstorage").textContent = res.storage
+            document.querySelector("#calloutput").textContent = res.ret
+            session.setAnnotations([])
+        }
+        else session.setAnnotations(res)
+    }
+    setInterval(update, 1000)
+    
 </script>
 
-<script src="browser.js"></script>
     
 <!---
 <script src="_build/default/browser.bc.js"></script>

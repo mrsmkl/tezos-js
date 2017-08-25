@@ -246,6 +246,45 @@ let execute (dta : data Js.t) =
     Js.Unsafe.coerce obj
   | _ -> Js.Unsafe.coerce (process_annotations (List.map get_info !error_lst) !locs)
 
+let trace (dta : data Js.t) =
+  let code_str : string = Js.to_string (dta##.code) in
+  let stor_str = Js.to_string dta##.storage in
+  let input_str = Js.to_string dta##.input in
+  error_lst := [];
+  let locs = ref [] in
+  let helper = ref None in
+  begin
+    report (parse_program code_str) >>=? fun {ast=prog; loc_table=locations} ->
+    let _ = locs := locations in
+    report (parse_data input_str) >>=? fun {ast=data} ->
+    report (parse_data stor_str) >>=? fun {ast=stor} ->
+    let stor_type = prog.storage_type in
+    let storage = {Script.storage = stor; Script.storage_type = stor_type} in
+    report (Script_interpreter.trace nonce contract1 contract2 Tezos_context.empty_context storage prog money data 1000) >>=? fun ((ret, stor, _, _, _), lst) ->
+    let _ = print_expr no_locations Format.str_formatter ret in
+    let ret_str = Format.flush_str_formatter () in
+    let _ = print_expr no_locations Format.str_formatter stor in
+    let outstor_str = Format.flush_str_formatter () in
+    helper := Some (ret_str, outstor_str, lst);
+    return ()
+  end;
+  match !helper with
+  | Some (ret, out, lst) ->
+    let arr = new%js Js.array_empty in
+    let add_annotation (row, _, e1) =
+      let e1str = String.concat "," (List.map expr_to_string e1) in
+      let obj = Js.Unsafe.obj [|
+        ("position", get_location !locs row);
+        ("expr", Js.Unsafe.inject (js e1str)) |] in
+      ignore (arr##push obj) in
+    List.iter add_annotation lst;
+    let obj = Js.Unsafe.obj [|
+      ("storage", Js.Unsafe.inject (js ret));
+      ("ret", Js.Unsafe.inject (js out));
+      ("trace", Js.Unsafe.inject arr)|] in
+    Js.Unsafe.coerce obj
+  | _ -> Js.Unsafe.coerce (process_annotations (List.map get_info !error_lst) !locs)
+
 let typecheck (code_str : Js.js_string Js.t) =
   error_lst := [];
   let locs = ref [] in
@@ -275,6 +314,7 @@ let typecheck (code_str : Js.js_string Js.t) =
 class type exported = object
   method typecheck : (Js.js_string Js.t -> unit Js.t) Js.callback Js.writeonly_prop
   method execute : (data Js.t -> unit Js.t) Js.callback Js.writeonly_prop
+  method trace : (data Js.t -> unit Js.t) Js.callback Js.writeonly_prop
 end
 
 let exported : exported Js.t =
@@ -285,6 +325,7 @@ let exported : exported Js.t =
 
 let _ =
   exported##.execute := Js.wrap_callback execute;
+  exported##.trace := Js.wrap_callback trace;
   exported##.typecheck := Js.wrap_callback typecheck
 
 
