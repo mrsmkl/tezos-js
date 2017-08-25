@@ -4,7 +4,7 @@
 (menhir ((modules (concrete_parser))))
 
 (executables (
-   (names (browser binding binding-commonjs))
+   (names (browser binding binding_commonjs))
    (libraries (ezjsonm ipaddr.unix commonjs commonjs_ppx lwt ocplib-json-typed.bson js_of_ocaml-lwt.logger
               js_of_ocaml js_of_ocaml.ppx ocplib-resto.directory calendar num cstruct))
    (preprocess (pps (js_of_ocaml.ppx commonjs_ppx)))

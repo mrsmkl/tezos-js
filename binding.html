@@ -1,8 +1,12 @@
 <!doctype html>
 
+<title>Test bindings</title>
+
 <script src="binding.js"></script>
 
 <script>
     var michelsonjs = require("michelsonjs")
-    michelsonjs.execute({code:"parameter unit;\nstorage unit;\nreturn unit;\ncode { DUP;\n       DROP }", storage:"Unit", storagetype:"unit", input:"Unit"})
+    console.log(michelsonjs.typecheck("parameter unit;\nstorage unit;\nreturn unit;\ncode { DUP;\n       DROP }"))
+    var res = michelsonjs.execute({code:"parameter unit;\nstorage unit;\nreturn unit;\ncode { DUP;\n       DROP }", storage:"Unit", input:"Unit"})
+    console.log(res)
 </script>
